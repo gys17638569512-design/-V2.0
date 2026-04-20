@@ -1,0 +1,31 @@
+node_modules/
+dist/
+build/
+.DS_Store
+
+# Vue/uni-app
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+unpackage/
+
+# Python / FastAPI
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.env
+.pytest_cache/
+.coverage
+htmlcov/
+alembic.ini
+
+# IDEA / Editor
+.idea/
+.vscode/
+*.swp
