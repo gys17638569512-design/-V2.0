@@ -1,0 +1,211 @@
+湖南智造机械科技有限公司
+数字化维保系统
+AI团队技术开发文档
+Agent Collaboration Guide · v1.0
+
+文档版本 | v1.0  （与PRD v3.0配套）
+编制日期 | 2026年4月
+文档状态 | ✅ 正式发布 · 强制执行
+适用对象 | 所有参与开发的AI工具（Codex / Trae CN）
+开发工具 | OpenAI Codex 桌面端 + Trae CN（搭配使用）
+代码仓库 | GitHub · Monorepo结构
+部署环境 | 阿里云ECS · Ubuntu 22.04 · Docker + Docker Compose
+核心原则 | 一次只做一个模块，做完测试通过再做下一个
+
+第一章  工具链与职责分工
+1.1 工具链总览
+工具 | 定位 | 主要职责 | 使用时机
+Claude.ai（本文档） | 规划 + 审查 | 写任务描述/审查代码逻辑/解答疑问/验收检查 | 每个模块开始前 + 完成后
+OpenAI Codex 桌面端 | 主力开发 | 读GitHub仓库/写代码/运行测试/提交Git/SSH连服务器 | 日常开发主力工具
+Trae CN | 备用开发 | Codex配额用完时切换/前端Vue3组件开发 | Codex配额不足时
+GitHub | 代码仓库 | 存储所有代码/版本管理/触发自动部署 | 全程使用
+Docker Desktop (Win) | 本地环境 | Windows本地开发运行，与服务器环境完全一致 | 本地开发测试
+阿里云ECS Ubuntu | 生产服务器 | 运行Docker容器，对外提供服务 | 部署上线
+
+1.2 Codex与Trae搭配使用规则
+核心原则：两个工具读同一份AGENTS.md规范文件，产出的代码风格和结构完全一致。切换工具时，新工具第一件事必须读AGENTS.md和PROGRESS.md，然后才能开始工作。
+
+场景 | 使用工具 | 原因
+后端API开发 | Codex优先 | Codex对Python/FastAPI支持更好，可直接读GitHub仓库
+Vue3前端组件 | Trae CN优先 | Trae对Vue3/Element Plus框架适配更好
+Codex配额不足 | 切换Trae CN | 读AGENTS.md后无缝继续，不影响代码质量
+排查Bug | Codex优先 | Codex可SSH连服务器查看实时日志
+数据库迁移 | Codex | Codex可以在Docker容器内执行alembic命令
+代码审查 | Claude.ai | 把代码描述给我，我帮你检查问题
+
+1.3 ChatGPT Plus配额管理策略
+ChatGPT Plus账号Codex有每日使用配额限制。必须合理分配，避免一天配额用完后无法继续开发。
+
+大任务必须拆小：每次只让Codex做一个函数或一个页面，不要一次生成整个模块
+优先级排序：复杂逻辑（数据隔离/状态机/权限控制）用Codex，简单页面用Trae
+配额预警：每天下午3点前完成当天重要任务，预留配额给下午可能的调试工作
+切换标准：Codex提示"已达到使用限制"时立即切换Trae，任务描述复制过去继续
+次日重置：配额通常每24小时重置，重置后优先完成昨天未完成的复杂任务
+
+第二章  核心规范文件体系
+2.1 文件体系总览
+项目根目录必须包含以下规范文件，所有AI工具每次工作前必须读取：
+
+digital-mms/                    # 仓库根目录 ├── AGENTS.md                   # 🔴 所有AI的宪法（必读） ├── PROGRESS.md                 # 🟡 当前开发进度（必读） ├── API_CONTRACT.md             # 🔵 接口契约（后端+前端共同遵守） ├── MOCK_DATA.md                # 🔵 Mock数据规范（前端开发用） ├── DOCKER.md                   # 🟢 Docker环境说明 ├── tasks/                      # 各模块任务文件 │   ├── 01-backend-auth.md │   ├── 02-backend-customer.md │   ├── 03-backend-equipment.md │   └── ... └── .env.example                # 环境变量模板
+
+2.2 AGENTS.md 完整内容
+以下是AGENTS.md的完整内容，直接复制到项目根目录创建此文件。所有AI工具每次开始工作前必须先读取这个文件。
+
+# DMMS 数字化维保系统 · AI开发规范（AGENTS.md） # 所有AI工具必须在开始任何工作前读取本文件 # 版本：v1.0 · 湖南智造机械科技有限公司  ## 项目基本信息 - 系统名称：数字化维保系统（DMMS） - 公司：湖南智造机械科技有限公司 - 仓库结构：Monorepo（所有端在同一仓库） - 部署环境：Ubuntu 22.04 + Docker + Docker Compose  ## 技术栈（锁定，不可更改） 后端：Python 3.10+ / FastAPI / SQLAlchemy 2.x / MySQL 8.0 PC前端：Vue3 3.4+ / Element Plus / Pinia / TypeScript / Axios 小程序：uni-app（非原生微信小程序） 缓存：Redis（通知/Session） 文件存储：阿里云OSS 容器：Docker + Docker Compose  ## 绝对禁止事项 ❌ 禁止在代码里硬编码任何密码、密钥、手机号 ❌ 禁止跳过Alembic直接修改数据库结构 ❌ 禁止在Router层直接操作数据库（必须经过Service层） ❌ 禁止在前端代码里硬编码下拉选项值（必须从接口取） ❌ 禁止一次生成超过1个模块的代码（必须逐模块开发） ❌ 禁止跳过pytest直接进入下一个模块 ❌ 禁止修改已有的数据库迁移文件  ## 后端分层架构（严格遵守） 请求 → routers/（参数验证+权限检查）       → services/（业务逻辑+数据隔离）       → repositories/（数据库CRUD）       → models/（ORM表结构）  ## 数据隔离规则（必须在Service层实现） MANAGER角色：查询时追加 .filter(Customer.manager_id == current_user.id) TECH角色：查询时追加 .filter(WorkOrder.engineer_id == current_user.id) CLIENT角色：只能看自己企业的数据 ADMIN角色：无限制，看本发展商所有数据  ## 统一响应格式 成功：{"code": 0, "msg": "ok", "data": {...}} 失败：{"code": 错误码, "msg": "错误描述", "data": null} 错误码：400参数错误/401未授权/403无权限/404不存在/500服务器错误  ## 命名规范 Python文件/函数/变量：snake_case Python类：PascalCase Vue组件文件：PascalCase.vue Vue变量：camelCase 数据库表名：snake_case复数（work_orders, customers） API路径：kebab-case复数（/api/v1/work-orders） Git提交格式：feat(模块): 描述 / fix(模块): 描述 / refactor(模块): 描述  ## 环境变量规则 所有配置从.env文件读取，不硬编码在代码里 后端：DATABASE_URL / SECRET_KEY / OSS_* / SMS_* / WECHAT_* 前端：VITE_API_BASE_URL（开发时指向本地/生产时指向服务器）  ## 每个模块完成后必须执行 1. 后端：运行 pytest tests/ -v 确认全绿 2. 前端：运行 npm run build 确认无错误 3. Git提交：git add . && git commit -m "feat(模块名): 完成XX功能" 4. 更新PROGRESS.md：把当前模块标记为✅已完成
+
+2.3 PROGRESS.md 模板
+# DMMS 开发进度看板 # 每个模块完成后立即更新本文件 # 格式：✅已完成 / 🔄进行中 / ⬜未开始  ## 后端API（逐模块） ⬜ M01 项目初始化 + Docker环境搭建 ⬜ M02 数据库模型 + Alembic迁移 ⬜ M03 用户认证（JWT登录/Token续期/权限中间件） ⬜ M04 字段设置API（所有下拉选项的基础） ⬜ M05 客户管理API（含数据隔离） ⬜ M06 联系人管理API ⬜ M07 厂区管理API ⬜ M08 设备档案API（含三编号+二维码） ⬜ M09 证书管理API（含OCR接口） ⬜ M10 物料库API（含三级价格） ⬜ M11 检查模板API（含版本控制） ⬜ M12 维保工单API（含状态机） ⬜ M13 维修工单API（含费用单） ⬜ M14 报告生成API（含PDF队列） ⬜ M15 安全隐患API ⬜ M16 通知系统（WebSocket + 短信） ⬜ M17 文件上传API（OSS集成） ⬜ M18 统计报表API ⬜ M19 审计日志API ⬜ M20 系统设置API（编号规则/字段配置）  ## PC管理端（逐页面） ⬜ F01 项目初始化 + 路由 + 布局框架 ⬜ F02 登录页 + Token管理 ⬜ F03 工作台首页（数据看板） ⬜ F04 工单列表页 + 筛选 ⬜ F05 新建派单三步抽屉 ⬜ F06 工单详情页（含评论/时间线） ⬜ F07 客户列表页 ⬜ F08 客户详情页（含联系人/设备/合同/跟进） ⬜ F09 设备列表页 ⬜ F10 设备详情页（六个Tab） ⬜ F11 检查模板管理页 ⬜ F12 物料库管理页 ⬜ F13 报告列表页 ⬜ F14 安全隐患管理页 ⬜ F15 统计报表页 ⬜ F16 系统设置（字段/编号/用户/权限/通知） ⬜ F17 全局搜索组件 ⬜ F18 WebSocket实时通知  ## 客户门户 ⬜ P01 初始化 + 登录 ⬜ P02 门户首页（个性化卡片） ⬜ P03 设备列表/详情（只读） ⬜ P04 报告查看/分享链接 ⬜ P05 工单进度查看 ⬜ P06 费用单确认  ## 发展商端 ⬜ D01-D06（与管理端相同结构，数据范围限本发展商）  ## 工程师小程序（uni-app） ⬜ MP01 登录 + 今日工单列表 ⬜ MP02 工单详情 + 接单/拒单 ⬜ MP03 GPS打卡四步流程 ⬜ MP04 检查表填写（离线支持） ⬜ MP05 水印相机组件 ⬜ MP06 客户签字（Canvas） ⬜ MP07 安全隐患上报 ⬜ MP08 工程师日报  ## Docker部署 ⬜ DEP01 服务器初始化 + Docker安装 ⬜ DEP02 docker-compose.yml配置 ⬜ DEP03 Nginx配置 + HTTPS ⬜ DEP04 GitHub Actions CI/CD ⬜ DEP05 数据备份脚本
+
+2.4 API_CONTRACT.md 接口契约（关键片段）
+接口契约是防止前后端AI格式不一致的核心文件。所有接口的输入输出格式在这里定义，前端和后端都照着做，不允许自己发明格式。
+
+# API接口契约（API_CONTRACT.md）  ## 基础规范 Base URL: /api/v1 认证方式: Authorization: Bearer {JWT_TOKEN} 内容类型: Content-Type: application/json  ## 统一响应格式 成功响应： {   "code": 0,   "msg": "ok",   "data": {...} 或 [...] }  分页响应： {   "code": 0,   "msg": "ok",   "data": {     "items": [...],     "total": 100,     "page": 1,     "page_size": 20   } }  错误响应： {   "code": 401,   "msg": "未授权，请重新登录",   "data": null }  ## 分页参数（统一） GET /api/v1/work-orders?page=1&page_size=20&status=PENDING  ## 时间格式 所有时间字段使用ISO 8601格式：2026-04-19T14:30:00+08:00  ## 核心接口定义示例  ### 登录 POST /api/v1/auth/login 请求：{"username": "string", "password": "string"} 响应data：{   "access_token": "string",   "token_type": "bearer",   "expires_in": 86400,   "user": {"id":1,"username":"admin","role":"ADMIN","name":"张三"} }  ### 工单列表 GET /api/v1/work-orders 响应data.items[0]：{   "id": 1,   "order_no": "WO-2026-000001",   "customer_name": "宝武钢铁",   "equipment_name": "QD50T桥式起重机A2",   "engineer_name": "张伟",   "status": "PENDING",   "priority": "NORMAL",   "planned_date": "2026-04-20",   "is_overdue": false,   "overdue_days": 0,   "created_at": "2026-04-19T10:00:00+08:00" }  ### 工单状态枚举 PENDING/ASSIGNED/ACCEPTED/IN_PROGRESS/PENDING_SIGN/COMPLETED/CANCELLED/REVIEWED  ### 工单优先级枚举 NORMAL/URGENT  ### 角色枚举 SUPER_ADMIN/ADMIN/MANAGER/TECH/CLIENT/DEALER
+
+第三章  Docker环境配置
+3.1 本地开发环境（Windows + Docker Desktop）
+重要：本地开发也必须用Docker Desktop，与服务器Ubuntu Docker环境完全一致，避免"本地好用服务器报错"的问题。
+
+3.1.1 docker-compose.dev.yml（本地开发用）
+version: "3.8"  services:   db:     image: mysql:8.0     environment:       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}       MYSQL_DATABASE: dmms_dev       MYSQL_USER: ${DB_USER}       MYSQL_PASSWORD: ${DB_PASSWORD}     ports:       - "3306:3306"     volumes:       - mysql_dev_data:/var/lib/mysql     healthcheck:       test: ["CMD","mysqladmin","ping","-h","localhost"]       interval: 10s       timeout: 5s       retries: 5    redis:     image: redis:7-alpine     ports:       - "6379:6379"    backend:     build:       context: ./backend       dockerfile: Dockerfile.dev     volumes:       - ./backend:/app          # 热重载：代码改动立即生效     ports:       - "8000:8000"     env_file:       - .env.dev     depends_on:       db:         condition: service_healthy     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload  volumes:   mysql_dev_data:
+
+3.1.2 backend/Dockerfile.dev（开发环境）
+FROM python:3.10-slim WORKDIR /app COPY requirements.txt . RUN pip install -r requirements.txt --no-cache-dir COPY . . EXPOSE 8000
+
+3.2 生产环境（Ubuntu服务器）
+3.2.1 docker-compose.prod.yml（生产用）
+version: "3.8"  services:   db:     image: mysql:8.0     restart: always     environment:       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}       MYSQL_DATABASE: dmms_prod       MYSQL_USER: ${DB_USER}       MYSQL_PASSWORD: ${DB_PASSWORD}     volumes:       - mysql_prod_data:/var/lib/mysql       - ./backups:/backups      # 备份目录挂载     healthcheck:       test: ["CMD","mysqladmin","ping","-h","localhost"]       interval: 30s       timeout: 10s       retries: 3    redis:     image: redis:7-alpine     restart: always     volumes:       - redis_data:/data    backend:     build:       context: ./backend       dockerfile: Dockerfile.prod     restart: always     env_file:       - .env.prod     depends_on:       db:         condition: service_healthy     volumes:       - ./backend/assets:/app/assets   # 字体文件       - upload_data:/app/uploads     command: uvicorn main:app --host 0.0.0.0 --port 8000 --workers 2    nginx:     image: nginx:alpine     restart: always     ports:       - "80:80"       - "443:443"     volumes:       - ./nginx/nginx.conf:/etc/nginx/nginx.conf       - ./nginx/ssl:/etc/nginx/ssl       - ./frontend-admin/dist:/usr/share/nginx/html/admin       - ./frontend-portal/dist:/usr/share/nginx/html/portal     depends_on:       - backend  volumes:   mysql_prod_data:   redis_data:   upload_data:
+
+3.2.2 nginx/nginx.conf
+server {     listen 80;     server_name your-domain.com;     return 301 https://$host$request_uri; }  server {     listen 443 ssl;     server_name your-domain.com;      ssl_certificate /etc/nginx/ssl/fullchain.pem;     ssl_certificate_key /etc/nginx/ssl/privkey.pem;      # PC管理端     location /admin/ {         root /usr/share/nginx/html;         try_files $uri $uri/ /admin/index.html;  # Vue Router history模式     }      # 客户门户     location /portal/ {         root /usr/share/nginx/html;         try_files $uri $uri/ /portal/index.html;     }      # 后端API反向代理     location /api/ {         proxy_pass http://backend:8000;         proxy_set_header Host $host;         proxy_set_header X-Real-IP $remote_addr;     }      # WebSocket代理     location /ws/ {         proxy_pass http://backend:8000;         proxy_http_version 1.1;         proxy_set_header Upgrade $http_upgrade;         proxy_set_header Connection "upgrade";     } }
+
+3.3 环境变量文件
+.env.example（提交到Git，不含真实密钥）
+# ─── 数据库 ─── DB_ROOT_PASSWORD=修改为强密码 DB_USER=dmms_user DB_PASSWORD=修改为强密码 DATABASE_URL=mysql+pymysql://dmms_user:密码@db:3306/dmms_prod  # ─── 安全 ─── SECRET_KEY=生成32位以上随机字符串 ACCESS_TOKEN_EXPIRE_MINUTES=1440  # ─── 阿里云OSS ─── OSS_ENDPOINT=oss-cn-shanghai.aliyuncs.com OSS_ACCESS_KEY= OSS_SECRET_KEY= OSS_BUCKET=dmms-prod  # ─── 阿里云SMS ─── SMS_ACCESS_KEY= SMS_SECRET_KEY= SMS_SIGN_NAME=智造维保  # ─── 微信小程序 ─── WECHAT_APPID= WECHAT_SECRET=  # ─── 阿里云OCR ─── OCR_ACCESS_KEY= OCR_SECRET_KEY=  # ─── 阿里云DirectMail ─── MAIL_ACCESS_KEY= MAIL_SECRET_KEY= MAIL_FROM=noreply@your-domain.com  # ─── PDF字体路径（容器内路径）─── FONT_PATH_SIMSUN=/app/assets/fonts/SimSun.ttf FONT_PATH_SIMHEI=/app/assets/fonts/SimHei.ttf  # ─── 前端 ─── VITE_API_BASE_URL=https://your-domain.com/api/v1
+
+3.4 GitHub Actions CI/CD（自动部署）
+.github/workflows/deploy.yml
+name: Deploy to Production  on:   push:     branches: [main]  jobs:   deploy:     runs-on: ubuntu-latest     steps:       - name: SSH到服务器执行部署         uses: appleboy/ssh-action@master         with:           host: ${{ secrets.SERVER_HOST }}           username: ${{ secrets.SERVER_USER }}           key: ${{ secrets.SERVER_SSH_KEY }}           script: |             cd /opt/dmms             git pull origin main             docker-compose -f docker-compose.prod.yml build backend             docker-compose -f docker-compose.prod.yml up -d             docker-compose -f docker-compose.prod.yml exec backend               alembic upgrade head             echo "部署完成"
+
+配置说明：在GitHub仓库Settings→Secrets里添加 SERVER_HOST（服务器IP）、SERVER_USER（ubuntu）、SERVER_SSH_KEY（SSH私钥）。每次push到main分支，服务器自动更新并重启。
+
+第四章  开发顺序与任务模板
+4.1 完整开发路线图
+阶段 | 模块 | 预计时间 | 完成标准 | 工具
+阶段0 | 服务器初始化+Docker环境搭建 | 3天 | docker-compose up能正常启动所有服务 | Codex SSH
+阶段1 | 后端M01-M04（基础框架+认证+字段） | 1周 | pytest全绿，Swagger可调用接口 | Codex
+阶段2 | 后端M05-M11（客户+设备+模板） | 2周 | pytest全绿，数据隔离测试通过 | Codex/Trae
+阶段3 | 后端M12-M20（工单+报告+通知+统计） | 3周 | pytest全绿，PDF能生成 | Codex/Trae
+阶段4 | PC管理端F01-F08（框架+工单+客户） | 3周 | 页面功能正常，Mock数据显示正确 | Trae
+阶段5 | PC管理端F09-F18（设备+报告+设置） | 2周 | 所有页面完整，切换真实接口正常 | Trae
+阶段6 | 客户门户P01-P06 | 1.5周 | 客户可以查看报告和设备 | Trae
+阶段7 | 发展商端D01-D06 | 1.5周 | 发展商可以管理自己的数据 | Trae
+阶段8 | 工程师小程序MP01-MP08 | 3周 | GPS打卡/离线填单/签字正常 | Trae/Codex
+阶段9 | 集成联调+第三方服务接入 | 2周 | 第三方服务全部联通 | Codex
+阶段10 | 生产部署+安全加固+备份 | 1周 | 系统在服务器正常运行 | Codex SSH
+
+4.2 给AI的标准任务描述模板
+每次给Codex或Trae任务时，使用以下模板。固定开头让AI先读规范文件，这是保证多AI协作一致性的关键。
+
+【任务开始前必读】 1. 请先读取项目根目录的 AGENTS.md 文件 2. 请读取 PROGRESS.md 了解当前开发进度 3. 请读取 API_CONTRACT.md 了解接口规范  【当前任务】 任务编号：M05 任务名称：客户管理API 所在目录：backend/  【需要完成的功能】 1. 创建客户CRUD接口（列表/详情/新建/编辑/删除） 2. 实现MANAGER角色数据隔离（只能看自己负责的客户） 3. 支持按公司名/状态/经理筛选 4. 支持分页（page/page_size参数） 5. 写入审计日志（新增/修改/删除操作）  【接口规范】（严格遵守API_CONTRACT.md） GET  /api/v1/customers          # 客户列表（分页+筛选） POST /api/v1/customers          # 新建客户 GET  /api/v1/customers/{id}     # 客户详情 PUT  /api/v1/customers/{id}     # 编辑客户 DELETE /api/v1/customers/{id}  # 删除客户（软删除）  【完成标准】 □ pytest tests/test_customers.py -v 全绿 □ MANAGER角色只能看自己负责的客户（数据隔离测试） □ 所有操作写入audit_logs表 □ git commit -m "feat(customer): 完成客户管理API" □ 更新PROGRESS.md 将M05标记为✅  【禁止事项】 ❌ 不要同时做M06或其他模块 ❌ 不要跳过写测试 ❌ 不要在Router层直接查询数据库
+
+4.3 后端模块完成验收清单
+每个后端模块完成后，让Codex执行以下检查：  1. 运行测试    pytest tests/ -v --tb=short    → 必须全绿，0个FAILED  2. 检查数据隔离    pytest tests/test_data_isolation.py -v    → 验证MANAGER/TECH角色不能看到其他人的数据  3. 检查安全问题（让AI自查）    - 有没有硬编码密码或密钥？    - 有没有SQL注入风险？    - 有没有跳过权限验证的接口？    - 有没有TODO/FIXME未完成？  4. 检查审计日志    验证新增/修改/删除操作是否写入audit_logs表  5. 提交代码    git add .    git commit -m "feat(模块名): 完成XX功能"    git push origin develop  6. 更新进度    修改PROGRESS.md，将当前模块标记为✅
+
+4.4 前端模块完成验收清单
+每个前端页面完成后，执行以下检查：  1. 构建检查    npm run build    → 必须无错误（警告可以有，错误不行）  2. 功能测试（你来点点看）    □ 页面可以正常打开，没有空白或报错    □ 列表数据正常显示（Mock数据）    □ 新建/编辑功能正常，表单验证有效    □ 删除有二次确认，删除后列表刷新    □ 筛选和搜索结果正确    □ 手机浏览器访问显示正常（响应式）    □ 浏览器控制台没有红色报错  3. Mock数据检查    - Mock数据格式必须和API_CONTRACT.md一致    - 确认切换真实接口只需改VITE_API_BASE_URL  4. 提交代码    git add .    git commit -m "feat(页面名): 完成XX页面"    git push origin develop  5. 更新进度    修改PROGRESS.md，将当前页面标记为✅
+
+第五章  代码质量与安全规范
+5.1 AI自查清单（每次生成代码后必须执行）
+在完成代码生成后，让AI对自己的代码执行以下检查，把这段文字追加到每次任务描述的末尾：
+
+【代码完成后请自查以下问题】  安全检查： □ 是否有硬编码的密码、密钥、手机号、身份证号？ □ 所有敏感配置是否从环境变量读取？ □ 是否有未验证的用户输入直接拼接SQL？ □ 文件上传是否验证文件类型和大小？  权限检查： □ 每个API是否有角色权限验证？ □ MANAGER角色是否只能看自己的数据？ □ TECH角色是否只能看自己的工单？ □ 删除操作是否有二次确认或软删除？  代码质量： □ 是否有TODO/FIXME/print/console.log未清理？ □ 错误是否有适当的异常处理？ □ 数据库操作是否在Service层（不在Router层）？ □ 是否写了对应的单元测试？  规范检查： □ 命名是否符合AGENTS.md规范？ □ 接口响应格式是否符合API_CONTRACT.md？ □ 是否有需要数据库迁移但没有生成迁移文件？
+
+5.2 数据库迁移规范
+禁止直接修改数据库！每次改动数据库结构（加字段/加表/改字段类型），必须用Alembic生成迁移文件，提交到Git。生产环境通过运行迁移文件来更新数据库结构。
+
+# 正确的数据库变更流程：  1. 修改 models/ 下的ORM模型文件  2. 生成迁移文件    docker-compose exec backend alembic revision --autogenerate -m "描述"    例如：alembic revision --autogenerate -m "add_phone_to_user"  3. 检查生成的迁移文件（在migrations/versions/目录）    确认upgrade()和downgrade()函数内容正确  4. 执行迁移    docker-compose exec backend alembic upgrade head  5. 提交迁移文件到Git    git add migrations/    git commit -m "db: add phone field to user table"  # 禁止的操作： ❌ 直接在数据库工具里加字段 ❌ 修改已经执行过的迁移文件 ❌ 删除迁移文件
+
+5.3 依赖包版本锁定
+# requirements.txt 必须锁定精确版本 # 正确写法： fastapi==0.110.0 sqlalchemy==2.0.28 pymysql==1.1.0 alembic==1.13.1 python-jose[cryptography]==3.3.0 passlib[bcrypt]==1.7.4 python-multipart==0.0.9 redis==5.0.1 weasyprint==61.0 celery==5.3.6  # 错误写法（禁止）： fastapi>=0.100     # ❌ 版本不锁定 sqlalchemy         # ❌ 没有版本号  # 更新依赖包时： pip install fastapi==0.111.0   # 指定新版本 pip freeze > requirements.txt  # 更新锁定文件 # 然后测试，确认没有兼容性问题
+
+5.4 Git提交规范
+类型 | 含义 | 示例
+feat | 新功能 | feat(work-order): 完成工单状态机API
+fix | Bug修复 | fix(auth): 修复Token过期时间计算错误
+refactor | 重构 | refactor(customer): 抽离数据隔离到Service层
+test | 测试 | test(equipment): 补充设备档案单元测试
+db | 数据库迁移 | db: add version field to all tables
+docs | 文档 | docs: 更新PROGRESS.md进度
+docker | 容器配置 | docker: 添加healthcheck配置
+chore | 杂项 | chore: 更新dependencies版本
+
+每个功能点完成后立即提交，不要积累多个功能一起提交
+主分支（main）受保护，所有开发在develop分支进行
+每个阶段完成后，develop合并到main触发自动部署
+出现严重问题时：git revert 或 git checkout 回滚到上一个正常版本
+
+第六章  服务器初始化与维护
+6.1 服务器初始化脚本
+让Codex通过SSH连接服务器，粘贴以下脚本执行，完成服务器初始化。你不需要懂Linux，Codex会帮你操作。
+
+#!/bin/bash # 服务器初始化脚本（Ubuntu 22.04）  # 1. 系统更新 apt update && apt upgrade -y  # 2. 安装Docker curl -fsSL https://get.docker.com | sh systemctl enable docker systemctl start docker  # 3. 安装Docker Compose apt install docker-compose-plugin -y  # 4. 安装Git apt install git -y  # 5. 创建项目目录 mkdir -p /opt/dmms cd /opt/dmms  # 6. 克隆仓库 git clone https://github.com/your-org/digital-mms.git .  # 7. 创建.env.prod文件（根据.env.example填写真实配置） cp .env.example .env.prod nano .env.prod   # 编辑填入真实密钥  # 8. 安装SSL证书（Let s Encrypt免费） apt install certbot -y certbot certonly --standalone -d your-domain.com cp /etc/letsencrypt/live/your-domain.com/fullchain.pem nginx/ssl/ cp /etc/letsencrypt/live/your-domain.com/privkey.pem nginx/ssl/  # 9. 启动所有服务 docker-compose -f docker-compose.prod.yml up -d  # 10. 执行数据库初始化迁移 docker-compose -f docker-compose.prod.yml exec backend alembic upgrade head  # 11. 初始化测试数据（仅第一次） docker-compose -f docker-compose.prod.yml exec backend python seed_data.py  echo "✅ 服务器初始化完成"
+
+6.2 日常运维命令（让Codex执行）
+# 查看所有容器状态 docker-compose -f docker-compose.prod.yml ps  # 查看后端日志（最近100行） docker-compose -f docker-compose.prod.yml logs backend --tail=100  # 查看实时日志 docker-compose -f docker-compose.prod.yml logs -f backend  # 重启某个服务 docker-compose -f docker-compose.prod.yml restart backend  # 手动更新部署 cd /opt/dmms && git pull origin main docker-compose -f docker-compose.prod.yml build backend docker-compose -f docker-compose.prod.yml up -d  # 执行数据库迁移 docker-compose -f docker-compose.prod.yml exec backend alembic upgrade head  # 手动备份数据库 docker-compose -f docker-compose.prod.yml exec db   mysqldump -u root -p dmms_prod > /backups/dmms_$(date +%Y%m%d).sql  # 查看磁盘使用 df -h  # 查看内存使用 free -h
+
+6.3 数据库自动备份脚本
+#!/bin/bash # /opt/dmms/scripts/backup.sh # 每天凌晨3点自动执行（crontab配置）  DATE=$(date +%Y%m%d_%H%M%S) BACKUP_DIR=/opt/dmms/backups  mkdir -p $BACKUP_DIR  # 备份数据库 docker-compose -f /opt/dmms/docker-compose.prod.yml exec -T db \   mysqldump -u root -p${DB_ROOT_PASSWORD} dmms_prod \   > $BACKUP_DIR/dmms_$DATE.sql  # 压缩备份文件 gzip $BACKUP_DIR/dmms_$DATE.sql  # 上传到阿里云OSS（保留永久备份） ossutil cp $BACKUP_DIR/dmms_$DATE.sql.gz \   oss://dmms-backup/db/dmms_$DATE.sql.gz  # 删除30天前的本地备份（节省磁盘空间） find $BACKUP_DIR -name "*.sql.gz" -mtime +30 -delete  echo "备份完成: dmms_$DATE.sql.gz"  # 添加到crontab（让Codex执行）： # crontab -e # 0 3 * * * /opt/dmms/scripts/backup.sh >> /var/log/dmms_backup.log 2>&1
+
+6.4 常见问题排查
+现象 | 排查命令 | 常见原因 | 解决方案
+后端无法启动 | docker logs dmms-backend | 数据库未就绪/环境变量缺失 | 检查.env.prod/等待db健康检查通过
+前端页面打不开 | docker logs dmms-nginx | Nginx配置错误/前端未构建 | 检查nginx.conf/重新build前端
+API返回500 | docker logs dmms-backend --tail=50 | 代码Bug/数据库连接失败 | 查看错误堆栈/检查数据库连接
+数据库连接失败 | docker exec db mysqladmin ping | 密码错误/容器未启动 | 检查DB_PASSWORD/重启db容器
+SSL证书过期 | certbot renew | 证书90天有效期 | certbot renew自动续期
+磁盘空间不足 | df -h | 日志/备份/Docker镜像 | 清理旧备份/docker system prune
+
+第七章  Mock数据规范
+7.1 前端Mock数据规范
+前端在后端接口未完成时使用Mock数据开发。Mock数据格式必须与API_CONTRACT.md完全一致，切换真实接口时只需修改VITE_API_BASE_URL，不需要改任何代码。
+
+src/api/http.ts（axios封装，含Mock开关）
+import axios from "axios"  const USE_MOCK = import.meta.env.VITE_USE_MOCK === "true"  const http = axios.create({   baseURL: USE_MOCK ? "" : import.meta.env.VITE_API_BASE_URL,   timeout: 10000, })  // 请求拦截：自动加Token http.interceptors.request.use(config => {   const token = localStorage.getItem("access_token")   if (token) config.headers.Authorization = `Bearer ${token}`   return config })  // 响应拦截：统一处理错误 http.interceptors.response.use(   res => res.data,   err => {     if (err.response?.status === 401) {       localStorage.removeItem("access_token")       window.location.href = "/login"     }     return Promise.reject(err)   } )  export default http
+
+src/mock/work-orders.ts（Mock数据示例）
+// Mock数据格式必须和API_CONTRACT.md完全一致 export const mockWorkOrders = {   code: 0,   msg: "ok",   data: {     items: [       {         id: 1,         order_no: "WO-2026-000001",         customer_name: "宝武钢铁上海厂区",         equipment_name: "QD50T桥式起重机A2",         engineer_name: "张伟",         status: "IN_PROGRESS",         priority: "NORMAL",         planned_date: "2026-04-20",         is_overdue: false,         overdue_days: 0,         created_at: "2026-04-19T10:00:00+08:00"       },       {         id: 2,         order_no: "WO-2026-000002",         customer_name: "港口码头操作站",         equipment_name: "MH32T门式起重机",         engineer_name: "李明",         status: "PENDING",         priority: "URGENT",         planned_date: "2026-04-18",         is_overdue: true,         overdue_days: 2,         created_at: "2026-04-17T09:00:00+08:00"       }     ],     total: 2,     page: 1,     page_size: 20   } }
+
+第八章  测试数据初始化
+8.1 seed_data.py（测试数据脚本）
+系统上线前或重置数据库后，运行此脚本初始化测试数据。所有密码使用bcrypt加密，不存明文。
+
+# backend/seed_data.py """ 初始化测试数据脚本 运行：docker-compose exec backend python seed_data.py 注意：只在开发/测试环境运行，生产环境谨慎使用 """  from passlib.context import CryptContext from core.database import SessionLocal from models import User, Customer, Equipment, FieldSetting  pwd_context = CryptContext(schemes=["bcrypt"])  def seed():     db = SessionLocal()     try:         # 1. 创建超级管理员（强密码）         admin = User(             username="admin",             password=pwd_context.hash("Admin@2026!"),  # 强密码             name="系统管理员",             role="SUPER_ADMIN",             is_first_login=True,  # 首次登录必须改密         )         db.add(admin)          # 2. 初始化字段设置（所有下拉选项）         field_settings = [             # 设备大类             {"category":"device_type","value":"bridge_crane","label":"桥式起重机","sort_order":1},             {"category":"device_type","value":"gantry_crane","label":"门式起重机","sort_order":2},             {"category":"device_type","value":"electric_hoist","label":"电动葫芦","sort_order":3},             # 工单类型             {"category":"order_type","value":"monthly","label":"月检","sort_order":1},             {"category":"order_type","value":"quarterly","label":"季检","sort_order":2},             {"category":"order_type","value":"annual","label":"年检","sort_order":3},             {"category":"order_type","value":"repair","label":"维修","sort_order":4},             # 行业类型             {"category":"industry","value":"steel","label":"钢铁冶金","sort_order":1},             {"category":"industry","value":"port","label":"港口码头","sort_order":2},             {"category":"industry","value":"energy","label":"电力能源","sort_order":3},             {"category":"industry","value":"manufacturing","label":"制造业","sort_order":4},         ]         for fs in field_settings:             db.add(FieldSetting(**fs, is_system=True))          # 3. 创建测试客户         customer = Customer(             company_name="宝武钢铁上海厂区",             industry="steel",             address="上海市宝山区",             customer_type="maintenance",         )         db.add(customer)          db.commit()         print("✅ 测试数据初始化完成")     except Exception as e:         db.rollback()         print(f"❌ 初始化失败：{e}")     finally:         db.close()  if __name__ == "__main__":     seed()
+
+第九章  前端开发规范补充
+9.1 vite.config.ts（开发代理配置）
+import { defineConfig } from "vite" import vue from "@vitejs/plugin-vue" import path from "path"  export default defineConfig({   plugins: [vue()],   resolve: {     alias: { "@": path.resolve(__dirname, "src") }   },   server: {     port: 3000,     proxy: {       "/api": {         target: "http://localhost:8000",  // 代理到本地后端         changeOrigin: true,       },       "/ws": {         target: "ws://localhost:8000",    // WebSocket代理         ws: true,       }     }   } })
+
+9.2 WebSocket实时通知实现
+// src/utils/websocket.ts // WebSocket连接管理，含断线重连  class WSManager {   private ws: WebSocket | null = null   private reconnectDelay = 1000   private maxDelay = 30000    connect(token: string) {     const url = `${import.meta.env.VITE_WS_URL}/ws?token=${token}`     this.ws = new WebSocket(url)      this.ws.onopen = () => {       console.log("WebSocket已连接")       this.reconnectDelay = 1000  // 重置重连延迟     }      this.ws.onmessage = (event) => {       const msg = JSON.parse(event.data)       // 触发通知事件，通知铃铛更新       window.dispatchEvent(new CustomEvent("ws-notification", {detail: msg}))     }      this.ws.onclose = () => {       // 指数退避重连       setTimeout(() => {         this.reconnectDelay = Math.min(this.reconnectDelay * 2, this.maxDelay)         this.connect(token)       }, this.reconnectDelay)     }   } }  export const wsManager = new WSManager()
+
+9.3 Element Plus主题配置
+/* src/styles/element-override.scss */ /* 覆盖Element Plus默认主题色 */ :root {   --el-color-primary: #1677FF;        /* 主色：蓝色 */   --el-color-success: #52C41A;        /* 成功：绿色 */   --el-color-warning: #FA8C16;        /* 警告：橙色 */   --el-color-danger: #F5222D;         /* 危险：红色 */   --el-border-radius-base: 6px;       /* 统一圆角 */ }  /* 逾期工单行样式 */ .overdue-row {   background-color: #fff2f0 !important; } .overdue-row td {   color: #F5222D; }
+
+第十章  AI任务失败处理规范
+10.1 任务失败场景处理
+失败场景 | 处理方法 | 恢复步骤
+AI生成代码后pytest报错 | 不要继续，先修复当前错误 | 把报错信息粘贴给AI，让它修复，直到pytest全绿
+AI生成代码导致程序无法启动 | git stash保存现场，回滚到上次提交 | git stash / git checkout HEAD~1 / 重新给任务
+Codex配额用完，任务未完成 | 切换Trae CN继续，读AGENTS.md | 复制任务描述到Trae，从上次完成的地方继续
+AI理解错了需求，代码方向偏了 | 停止，不要继续，重新给任务描述 | git stash清理/重写任务描述/重新开始该模块
+数据库迁移冲突 | 不要手动改迁移文件 | 让AI生成新迁移文件覆盖，或alembic downgrade回退
+前后端接口格式不一致 | 对照API_CONTRACT.md检查 | 让前端AI或后端AI修改，对齐格式
+
+10.2 代码回滚操作（让Codex执行）
+# 场景1：最近几次提交都有问题，回到某个正常版本 git log --oneline -10           # 查看最近10次提交记录 git checkout abc1234            # 临时查看某个版本 git revert abc1234             # 撤销某次提交（保留历史）  # 场景2：当前改动还没提交，想丢弃回到上次提交 git checkout -- .              # 丢弃所有未提交改动  # 场景3：暂存当前改动，切换去做其他事 git stash                      # 暂存 git stash pop                  # 恢复暂存  # 场景4：错误合并了代码，需要撤销 git revert HEAD                # 撤销最后一次提交 git push origin develop        # 推送撤销记录
+
+10.3 每天开始工作前的检查流程
+1. 打开Codex，连接GitHub仓库    → 读取 AGENTS.md（规范）    → 读取 PROGRESS.md（进度）    → 确认今天要做哪个模块  2. 检查昨天的代码状态    git status                  # 有没有未提交的改动    git log --oneline -5        # 最近5次提交是什么  3. 确认本地环境正常    docker-compose -f docker-compose.dev.yml ps    → 所有服务显示Up状态  4. 开始今天的任务    → 从Claude.ai获取今天的任务描述    → 粘贴给Codex，开始开发
+
+— 文档完 —
+湖南智造机械科技有限公司  ·  数字化维保系统  ·  AI团队技术开发文档  v1.0
