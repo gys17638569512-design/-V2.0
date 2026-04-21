@@ -1,0 +1,14 @@
+.env.dev
+.env.prod
+docker/nginx/ssl/*.pem
+docker/nginx/ssl/*.key
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+dist/
+.vscode/
+.idea/
+backups/
+*.sql
+*.sql.gz
