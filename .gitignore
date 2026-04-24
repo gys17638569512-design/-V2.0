@@ -1,3 +1,4 @@
+.env
 .env.dev
 .env.prod
 docker/nginx/ssl/*.pem
@@ -5,6 +6,7 @@ docker/nginx/ssl/*.key
 __pycache__/
 *.pyc
 .pytest_cache/
+.venv-m01/
 node_modules/
 dist/
 .vscode/
