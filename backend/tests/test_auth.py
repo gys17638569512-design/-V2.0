@@ -4,13 +4,18 @@ from uuid import uuid4
 import jwt
 import pytest
 from fastapi import APIRouter
+from fastapi import Depends
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
+from app.api.deps import require_roles
 from app.core.config import get_settings
+from app.core.security import hash_password
 from app.db.session import get_session_factory
 from app.main import create_app
 from app.models import User
+from app.models.enums import UserRole
+from app.repositories.user_repository import UserRepository
 
 
 def _build_access_token_without_claim(
@@ -257,6 +262,72 @@ def test_login_with_corrupted_password_hash_returns_unified_401(auth_client, see
     assert response.json() == {
         "code": 401,
         "msg": "用户名或密码错误",
+        "data": None,
+    }
+
+
+def test_increment_token_version_requires_matching_old_version(auth_client, seeded_user) -> None:
+    session = get_session_factory()()
+    repository = UserRepository()
+    try:
+        first_increment = repository.increment_token_version_if_matches(
+            session,
+            user_id=seeded_user["id"],
+            expected_version=0,
+        )
+        second_increment = repository.increment_token_version_if_matches(
+            session,
+            user_id=seeded_user["id"],
+            expected_version=0,
+        )
+    finally:
+        session.close()
+
+    assert first_increment is not None
+    assert first_increment.token_version == 1
+    assert second_increment is None
+
+
+def test_require_roles_returns_unified_403_for_forbidden_user(auth_client, seeded_user) -> None:
+    session = get_session_factory()()
+    try:
+        manager = User(
+            username="manager-user",
+            password_hash=hash_password("manager-pass"),
+            full_name="项目经理",
+            role=UserRole.MANAGER,
+            is_active=True,
+        )
+        session.add(manager)
+        session.commit()
+    finally:
+        session.close()
+
+    app = create_app()
+    router = APIRouter()
+
+    @router.get("/__m03_admin_only")
+    def admin_only(_current_user=Depends(require_roles(UserRole.ADMIN))) -> dict[str, bool]:
+        return {"ok": True}
+
+    app.include_router(router, prefix="/api/v1")
+    client = TestClient(app)
+
+    login_response = auth_client.post(
+        "/api/v1/auth/login",
+        json={"username": "manager-user", "password": "manager-pass"},
+    )
+    access_token = login_response.json()["data"]["access_token"]
+
+    response = client.get(
+        "/api/v1/__m03_admin_only",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    assert response.status_code == 403
+    assert response.json() == {
+        "code": 403,
+        "msg": "无权限",
         "data": None,
     }
 

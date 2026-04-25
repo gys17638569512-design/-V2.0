@@ -25,7 +25,10 @@
 ## 快速启动
 1. 在仓库根目录复制环境变量文件：`Copy-Item .env.example .env`
 2. 在仓库根目录启动开发环境：`docker compose up --build`
-3. 访问：
+3. 初始化第一位管理员账号：
+   - `cd backend`
+   - `python -m app.bootstrap_admin --username admin --password "请改成强密码" --full-name "系统管理员"`
+4. 访问：
    - 健康检查：`http://localhost:8000/api/v1/health`
    - OpenAPI 文档：`http://localhost:8000/docs`
 

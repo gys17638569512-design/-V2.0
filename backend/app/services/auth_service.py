@@ -30,18 +30,48 @@ class AuthService:
         return self._build_auth_payload(user)
 
     def refresh(self, refresh_token: str) -> AuthTokenPayload:
-        user = self.get_user_from_token(refresh_token, expected_token_type=REFRESH_TOKEN_TYPE)
-        user = self.user_repository.increment_token_version(self.session, user)
+        user, claims = self._get_user_and_claims_from_token(
+            refresh_token,
+            expected_token_type=REFRESH_TOKEN_TYPE,
+        )
+        user = self.user_repository.increment_token_version_if_matches(
+            self.session,
+            user_id=user.id,
+            expected_version=claims.ver,
+        )
+        if user is None:
+            raise ApiException(401, "登录状态已失效")
         return self._build_auth_payload(user)
 
     def logout(self, access_token: str) -> None:
-        user = self.get_user_from_token(access_token, expected_token_type=ACCESS_TOKEN_TYPE)
-        self.user_repository.increment_token_version(self.session, user)
+        user, claims = self._get_user_and_claims_from_token(
+            access_token,
+            expected_token_type=ACCESS_TOKEN_TYPE,
+        )
+        invalidated_user = self.user_repository.increment_token_version_if_matches(
+            self.session,
+            user_id=user.id,
+            expected_version=claims.ver,
+        )
+        if invalidated_user is None:
+            raise ApiException(401, "登录状态已失效")
 
     def get_current_user(self, access_token: str) -> User:
         return self.get_user_from_token(access_token, expected_token_type=ACCESS_TOKEN_TYPE)
 
     def get_user_from_token(self, token: str, *, expected_token_type: str) -> User:
+        user, _claims = self._get_user_and_claims_from_token(
+            token,
+            expected_token_type=expected_token_type,
+        )
+        return user
+
+    def _get_user_and_claims_from_token(
+        self,
+        token: str,
+        *,
+        expected_token_type: str,
+    ) -> tuple[User, TokenClaims]:
         try:
             claims = TokenClaims.model_validate(self._decode_token(token))
             user_id = int(claims.sub)
@@ -54,7 +84,7 @@ class AuthService:
         user = self.user_repository.get_by_id(self.session, user_id)
         if user is None or not user.is_active or user.token_version != claims.ver:
             raise ApiException(401, "登录状态已失效")
-        return user
+        return user, claims
 
     def _build_auth_payload(self, user: User) -> AuthTokenPayload:
         access_token = create_token(
