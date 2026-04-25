@@ -1,0 +1,55 @@
+:root {
+  color-scheme: light;
+  font-family:
+    'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    sans-serif;
+  --dmms-color-page: #eef2f8;
+  --dmms-color-surface: #ffffff;
+  --dmms-color-surface-muted: #f7f9fc;
+  --dmms-color-border: rgba(15, 23, 42, 0.08);
+  --dmms-color-text-primary: #14213d;
+  --dmms-color-text-secondary: #5f6b80;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-width: 320px;
+  background: var(--dmms-color-page);
+  color: var(--dmms-color-text-primary);
+}
+
+body,
+button,
+input,
+textarea {
+  font-family:
+    'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  border: none;
+}
+
+.el-card {
+  border-color: var(--dmms-color-border);
+}
+
+.el-card__body {
+  padding: 22px;
+}
