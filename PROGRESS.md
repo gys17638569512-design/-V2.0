@@ -7,7 +7,7 @@
 ✅ M02 数据库模型 + Alembic迁移
 ✅ M03 用户认证（JWT登录/Token/权限）
 ✅ M04 字段设置API（所有下拉选项的基础）
-⬜ M05 客户管理API
+✅ M05 客户管理API
 ⬜ M06 联系人管理API
 ⬜ M07 厂区管理API
 ⬜ M08 设备档案API

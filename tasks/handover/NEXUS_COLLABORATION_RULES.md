@@ -116,12 +116,57 @@ The following decisions were explicitly confirmed by the user and must be respec
 - The project should first provide one administrator account
 - Later accounts should be created inside the system by that administrator, not by repeated direct database edits
 
-## 10. Plain-Language Summary
+## 10. Confirmed Working Preferences
+
+The following working preferences were explicitly confirmed by the user and should be treated as active collaboration rules:
+
+- `NEXUS` should mainly coordinate, review, communicate, and dispatch work, and should avoid writing production code directly unless the user asks for an exception
+- Every worker must check the plan and rules from multiple angles before starting work, and check again after finishing work
+- Subagents must report back to `NEXUS` immediately after finishing a scoped task, instead of waiting for a larger batch to accumulate
+- After receiving a subagent report, `NEXUS` must react immediately by either:
+  - dispatching the next scoped task
+  - sending the result or risk summary to the user
+  - pausing for user confirmation if scope, direction, or hidden risk changed
+- `NEXUS` should not wait silently for a long time after subagents finish work
+- Important user preferences should be written into repository coordination documents so they remain available in later sessions
+- The user's explanations should stay beginner-friendly, in plain Chinese, especially when confirmation is required
+
+## 11. Immediate Reporting Loop
+
+To avoid coordination delay, the active reporting loop is:
+
+1. Pre-check
+   Worker re-checks:
+   - current module scope
+   - hard rules from `AGENTS.md`
+   - current queue from `CURRENT_EXECUTION_PLAN.md`
+   - whether the task still matches user-confirmed direction
+
+2. Scoped execution
+   Worker completes only the assigned small task.
+
+3. Immediate report
+   As soon as the task is done, worker reports to `NEXUS` immediately with:
+   - completion status
+   - changed files
+   - verification run
+   - remaining risks
+   - recommendation for the next smallest step
+
+4. NEXUS reaction
+   `NEXUS` must then immediately:
+   - review whether the result still matches the plan
+   - decide next dispatch, review, or user update
+   - avoid leaving finished work unattended
+
+## 12. Plain-Language Summary
 
 This file means:
 
 - This window is the project command center
 - Workers do small, clear tasks
 - They must align before and after each task
+- They must report to `NEXUS` as soon as a scoped task finishes
+- `NEXUS` must react immediately after receiving a report
 - Better ideas are welcome, but they must come back here for confirmation
 - Code and planning are both part of the real project history

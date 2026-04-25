@@ -45,10 +45,13 @@ This is the current recommended queue.
 5. `M04` Field options
    Current status: completed: CRUD API, seeded baseline dropdown data, migration, and tests committed
 
-6. `M05` to `M08`
-   Customer, contacts, sites, equipment
+6. `M05` Customer management
+   Current status: completed: list, detail, create, update, delete, manager isolation, soft delete, and tests verified
 
-7. `F02` to `F10`
+7. `M06` to `M08`
+   Contacts, sites, equipment
+
+8. `F02` to `F10`
    Login, dashboard, customer pages, equipment pages, work order pages
 
 ## 4. What Is Intentionally Not First
