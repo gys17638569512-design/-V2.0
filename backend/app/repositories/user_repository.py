@@ -32,6 +32,7 @@ class UserRepository:
         full_name: str,
         role: UserRole,
         is_active: bool,
+        commit: bool = True,
     ) -> User:
         user = User(
             username=username,
@@ -41,8 +42,13 @@ class UserRepository:
             is_active=is_active,
         )
         session.add(user)
+        session.flush()
+        if not commit:
+            return user
+
         session.commit()
         session.refresh(user)
+        session.expunge(user)
         return user
 
     def increment_token_version_if_matches(
