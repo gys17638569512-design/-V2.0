@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import get_engine, reset_db_state
-from app.models import Customer, User
+from app.models import Customer, FieldOption, User
 
 
 def _reset_settings_state() -> None:
@@ -28,10 +28,12 @@ def test_minimum_foundation_models_are_registered() -> None:
 
     assert User.__tablename__ == "users"
     assert Customer.__tablename__ == "customers"
-    assert {"users", "customers"} <= table_names
+    assert FieldOption.__tablename__ == "field_options"
+    assert {"users", "customers", "field_options"} <= table_names
 
     user_columns = set(Base.metadata.tables["users"].columns.keys())
     customer_columns = set(Base.metadata.tables["customers"].columns.keys())
+    field_option_columns = set(Base.metadata.tables["field_options"].columns.keys())
 
     assert {
         "id",
@@ -52,6 +54,16 @@ def test_minimum_foundation_models_are_registered() -> None:
         "created_at",
         "updated_at",
     } <= customer_columns
+    assert {
+        "id",
+        "field_key",
+        "option_value",
+        "option_label",
+        "sort_order",
+        "is_active",
+        "created_at",
+        "updated_at",
+    } <= field_option_columns
 
     manager_fk_targets = {
         foreign_key.target_fullname
@@ -80,7 +92,7 @@ def test_alembic_upgrade_accepts_percent_encoded_database_url(
 
     engine = get_engine()
     inspector = inspect(engine)
-    assert {"users", "customers"} <= set(inspector.get_table_names())
+    assert {"users", "customers", "field_options"} <= set(inspector.get_table_names())
 
     _reset_settings_state()
 

@@ -40,8 +40,10 @@ This is the current recommended queue.
    Current status: completed and pushed to repository
 
 4. `M03` Authentication
+   Current status: completed and pushed to repository, including first-admin bootstrap and token invalidation hardening
 
 5. `M04` Field options
+   Current status: completed: CRUD API, seeded baseline dropdown data, migration, and tests committed
 
 6. `M05` to `M08`
    Customer, contacts, sites, equipment

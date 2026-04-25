@@ -1,15 +1,15 @@
 # Backend Foundation
 
-本目录当前承载 M01-M03 的后端基础，已包含最小认证逻辑与首个管理员初始化命令，但仍未进入业务 API 开发阶段。
+本目录当前承载 M01-M04 的后端基础，已包含最小认证逻辑、首个管理员初始化命令，以及字段设置 API，但仍未进入客户/设备/工单等业务 API 开发阶段。
 
 ## 当前结构
 
 - `app/api/`: 路由入口与系统级接口
 - `app/core/`: 环境配置等基础能力
 - `app/db/`: SQLAlchemy 基础对象、公共 ORM 基类与会话工厂
-- `app/models/`: 最小 ORM 模型地基（`User` / `Customer`）
-- `app/repositories/`: 数据访问层预留目录
-- `app/services/`: 业务服务层预留目录
+- `app/models/`: 当前 ORM 地基（`User` / `Customer` / `FieldOption` 等）
+- `app/repositories/`: 数据访问层
+- `app/services/`: 业务服务层
 - `app/schemas/`: 通用响应模型
 - `alembic/`: Alembic 环境与版本迁移
 - `tests/`: 基础接口与数据库迁移测试
@@ -36,7 +36,7 @@ python -m venv .venv
 
 ## 数据库迁移
 
-运行 M02 基线迁移：
+运行当前所有迁移：
 
 ```powershell
 python -m alembic -c backend\alembic.ini upgrade head

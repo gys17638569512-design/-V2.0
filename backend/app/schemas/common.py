@@ -13,6 +13,15 @@ class ApiResponse(BaseModel, Generic[DataT]):
     model_config = ConfigDict(extra="forbid")
 
 
+class PagePayload(BaseModel, Generic[DataT]):
+    items: list[DataT]
+    total: int
+    page: int
+    page_size: int
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class HealthPayload(BaseModel):
     service: str
     status: str

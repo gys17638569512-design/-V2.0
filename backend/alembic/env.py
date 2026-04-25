@@ -8,7 +8,7 @@ from sqlalchemy import pool
 from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import create_engine_from_url
-from app.models import BootstrapState, Customer, User  # noqa: F401
+from app.models import BootstrapState, Customer, FieldOption, User  # noqa: F401
 
 config = context.config
 

@@ -13,9 +13,10 @@
 ## 当前后端基础结果
 - 已建立 `backend/` 最小可运行后端骨架
 - 已提供开发用 `docker-compose.yml`、`backend/Dockerfile`、`.env.example`
-- 已建立 SQLAlchemy 2.x ORM 基础、最小 `User` / `Customer` 地基表
+- 已建立 SQLAlchemy 2.x ORM 基础、`User` / `Customer` / `FieldOption` 等核心地基表
 - 已提供 Alembic 初始化结构与 M02 基线迁移
 - 已提供 M03 最小认证闭环：`POST /api/v1/auth/login`、`POST /api/v1/auth/refresh`、`POST /api/v1/auth/logout`、`GET /api/v1/auth/me`
+- 已提供 M04 字段设置基础闭环：`GET /api/v1/field-options`、`POST /api/v1/field-options`、`PUT /api/v1/field-options/{id}`、`DELETE /api/v1/field-options/{id}`
 - 当前基础开放接口包括系统健康检查：`GET /api/v1/health`
 
 ## 协同与计划
