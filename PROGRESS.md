@@ -4,7 +4,7 @@
 
 ## 后端API
 ✅ M01 项目初始化 + Docker环境搭建
-⬜ M02 数据库模型 + Alembic迁移
+✅ M02 数据库模型 + Alembic迁移
 ⬜ M03 用户认证（JWT登录/Token/权限）
 ⬜ M04 字段设置API（所有下拉选项的基础）
 ⬜ M05 客户管理API

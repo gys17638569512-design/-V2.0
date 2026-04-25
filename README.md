@@ -10,10 +10,12 @@
 ## 开发规范
 所有AI工具开始工作前必须读取 AGENTS.md
 
-## M01 当前结果
+## 当前后端基础结果
 - 已建立 `backend/` 最小可运行后端骨架
 - 已提供开发用 `docker-compose.yml`、`backend/Dockerfile`、`.env.example`
-- 当前只包含系统健康检查接口：`GET /api/v1/health`
+- 已建立 SQLAlchemy 2.x ORM 基础、最小 `User` / `Customer` 地基表
+- 已提供 Alembic 初始化结构与 M02 基线迁移
+- 当前开放接口仍只包含系统健康检查：`GET /api/v1/health`
 
 ## 协同与计划
 - 当前协同规则：`tasks/handover/NEXUS_COLLABORATION_RULES.md`
