@@ -49,7 +49,7 @@ This is the current recommended queue.
    Current status: completed: list, detail, create, update, delete, manager isolation, soft delete, and tests verified
 
 7. `M06` to `M08`
-   Contacts, sites, equipment
+   Current status: `M06` completed: contacts list, create, update, soft delete, manager isolation, and tests verified; `M07` to `M08` pending
 
 8. `F02` to `F10`
    Login, dashboard, customer pages, equipment pages, work order pages

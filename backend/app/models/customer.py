@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import BaseModel
 
 if TYPE_CHECKING:
+    from app.models.contact import Contact
     from app.models.user import User
 
 
@@ -30,3 +31,4 @@ class Customer(BaseModel):
     )
 
     manager: Mapped["User | None"] = relationship(back_populates="customers_managed")
+    contacts: Mapped[list["Contact"]] = relationship(back_populates="customer")

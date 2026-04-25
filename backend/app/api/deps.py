@@ -8,6 +8,7 @@ from app.core.exceptions import ApiException
 from app.db.session import get_db_session
 from app.models import User, UserRole
 from app.services.auth_service import AuthService
+from app.services.contact_service import ContactService
 from app.services.customer_service import CustomerService
 from app.services.field_option_service import FieldOptionService
 
@@ -24,6 +25,10 @@ def get_field_option_service(session: Session = Depends(get_db_session)) -> Fiel
 
 def get_customer_service(session: Session = Depends(get_db_session)) -> CustomerService:
     return CustomerService(session)
+
+
+def get_contact_service(session: Session = Depends(get_db_session)) -> ContactService:
+    return ContactService(session)
 
 
 def get_bearer_token(
