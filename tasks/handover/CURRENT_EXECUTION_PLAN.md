@@ -80,7 +80,48 @@ Before starting a new module, `NEXUS` must check:
 - Did the previous module really finish verification?
 - Is there any better idea that needs user confirmation first?
 
-## 6. Review Rule After Each Module
+## 6. Confirmed Product Decisions
+
+The following decisions were explicitly confirmed by the user and should be treated as active project rules unless changed later.
+
+### 6.1 Logout Strategy
+
+Current confirmed rule:
+
+- M03 uses the simpler and safer "global invalidation" logout strategy
+- In plain language, when the system forces a token chain to become invalid, all active sessions for that user become invalid together
+
+Reason:
+
+- this is the most stable and lowest-risk way to finish the current authentication stage
+- it keeps M03 small enough to complete cleanly
+
+Recorded future requirement:
+
+- device-level logout is still wanted later
+- that means the future system should be able to log out one device without forcing all devices offline
+- this is not part of the current M03 scope
+- this should be added to later development content when the auth/session design is expanded
+
+### 6.2 First Admin Account
+
+Current confirmed rule:
+
+- the system should first provide one administrator account
+- after the system is fully developed enough to be used normally, other accounts should be created inside the system by that administrator
+
+Plain-language meaning:
+
+- we do not depend on manually creating every future user in the database
+- we first solve the "how do we get the first real admin into the system" problem
+- after that, normal user creation should be handled through system management features, not database handwork
+
+Implementation direction:
+
+- in the near term, the project should provide a safe way to initialize the first admin account
+- later account expansion should be handled by admin-side user management capabilities
+
+## 7. Review Rule After Each Module
 
 After a module finishes, `NEXUS` must check:
 
@@ -90,7 +131,7 @@ After a module finishes, `NEXUS` must check:
 - Should the result be committed and pushed now?
 - Is the next module still the right next module?
 
-## 7. Plain-Language Summary
+## 8. Plain-Language Summary
 
 This file means:
 

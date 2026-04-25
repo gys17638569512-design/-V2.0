@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Enum, String, true
+from sqlalchemy import Boolean, Enum, Integer, String, text, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import BaseModel
@@ -36,6 +36,12 @@ class User(BaseModel):
         nullable=False,
         default=True,
         server_default=true(),
+    )
+    token_version: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default=text("0"),
     )
 
     customers_managed: Mapped[list["Customer"]] = relationship(back_populates="manager")

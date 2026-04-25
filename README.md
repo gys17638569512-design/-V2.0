@@ -15,7 +15,8 @@
 - 已提供开发用 `docker-compose.yml`、`backend/Dockerfile`、`.env.example`
 - 已建立 SQLAlchemy 2.x ORM 基础、最小 `User` / `Customer` 地基表
 - 已提供 Alembic 初始化结构与 M02 基线迁移
-- 当前开放接口仍只包含系统健康检查：`GET /api/v1/health`
+- 已提供 M03 最小认证闭环：`POST /api/v1/auth/login`、`POST /api/v1/auth/refresh`、`POST /api/v1/auth/logout`、`GET /api/v1/auth/me`
+- 当前基础开放接口包括系统健康检查：`GET /api/v1/health`
 
 ## 协同与计划
 - 当前协同规则：`tasks/handover/NEXUS_COLLABORATION_RULES.md`

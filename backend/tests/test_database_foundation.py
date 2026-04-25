@@ -40,6 +40,7 @@ def test_minimum_foundation_models_are_registered() -> None:
         "full_name",
         "role",
         "is_active",
+        "token_version",
         "created_at",
         "updated_at",
     } <= user_columns

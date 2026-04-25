@@ -107,7 +107,16 @@ Right now, these are known realities:
 - The repo is currently working on `main`
 - Collaboration rules are now being written into the repository so future work stays aligned
 
-## 9. Plain-Language Summary
+## 9. Confirmed User Decisions
+
+The following decisions were explicitly confirmed by the user and must be respected in later work:
+
+- For the current authentication stage, use the simpler global invalidation logout strategy
+- Device-level logout is still required later, but it is a future development item and should not silently expand current scope
+- The project should first provide one administrator account
+- Later accounts should be created inside the system by that administrator, not by repeated direct database edits
+
+## 10. Plain-Language Summary
 
 This file means:
 
