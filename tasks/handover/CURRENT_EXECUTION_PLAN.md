@@ -31,17 +31,13 @@ This is the current recommended queue.
 `NEXUS` may adjust the next step after review, but should not change direction silently.
 
 1. `M01` Project initialization and Docker foundation
-   Current status: completed in local workspace and awaiting repository synchronization review
+   Current status: completed and pushed to repository, verified by review
 
 2. `F01` Frontend initialization, routes, and layout framework
-   Notes:
-   - the repo already has a light frontend skeleton
-   - this module should first align the existing skeleton with the official plan
+   Current status: completed: full layout shell, route skeleton, Dashboard, Placeholder component, and AppLayout all committed
 
 3. `M02` Database models and Alembic base
-   Notes:
-   - create the proper model and migration foundation
-   - do not jump into business API logic yet
+   Current status: completed and pushed to repository
 
 4. `M03` Authentication
 
