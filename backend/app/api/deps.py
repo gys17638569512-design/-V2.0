@@ -10,6 +10,7 @@ from app.models import User, UserRole
 from app.services.auth_service import AuthService
 from app.services.contact_service import ContactService
 from app.services.customer_service import CustomerService
+from app.services.equipment_service import EquipmentService
 from app.services.field_option_service import FieldOptionService
 from app.services.site_service import SiteService
 
@@ -34,6 +35,10 @@ def get_contact_service(session: Session = Depends(get_db_session)) -> ContactSe
 
 def get_site_service(session: Session = Depends(get_db_session)) -> SiteService:
     return SiteService(session)
+
+
+def get_equipment_service(session: Session = Depends(get_db_session)) -> EquipmentService:
+    return EquipmentService(session)
 
 
 def get_bearer_token(

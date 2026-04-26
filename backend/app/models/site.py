@@ -9,6 +9,7 @@ from app.db.base import BaseModel
 
 if TYPE_CHECKING:
     from app.models.customer import Customer
+    from app.models.equipment import Equipment
 
 
 class Site(BaseModel):
@@ -45,3 +46,4 @@ class Site(BaseModel):
     )
 
     customer: Mapped["Customer"] = relationship(back_populates="sites")
+    equipments: Mapped[list["Equipment"]] = relationship(back_populates="site")
