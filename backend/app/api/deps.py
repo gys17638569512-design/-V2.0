@@ -11,6 +11,7 @@ from app.services.auth_service import AuthService
 from app.services.contact_service import ContactService
 from app.services.customer_service import CustomerService
 from app.services.field_option_service import FieldOptionService
+from app.services.site_service import SiteService
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -29,6 +30,10 @@ def get_customer_service(session: Session = Depends(get_db_session)) -> Customer
 
 def get_contact_service(session: Session = Depends(get_db_session)) -> ContactService:
     return ContactService(session)
+
+
+def get_site_service(session: Session = Depends(get_db_session)) -> SiteService:
+    return SiteService(session)
 
 
 def get_bearer_token(
