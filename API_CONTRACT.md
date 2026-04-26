@@ -105,6 +105,13 @@ GET /api/v1/resource?page=1&page_size=20
 - PUT  /api/v1/equipment/{id}
 - DELETE /api/v1/equipment/{id}
 
+### M09 设备证书
+- GET  /api/v1/equipment-certificates
+- POST /api/v1/equipment-certificates
+- GET  /api/v1/equipment-certificates/{id}
+- PUT  /api/v1/equipment-certificates/{id}
+- DELETE /api/v1/equipment-certificates/{id}
+
 ### M12 维保工单
 - GET  /api/v1/work-orders
 - POST /api/v1/work-orders

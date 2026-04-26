@@ -51,7 +51,10 @@ This is the current recommended queue.
 7. `M06` to `M08`
    Current status: `M06` completed: contacts list, create, update, soft delete, manager isolation, and tests verified; `M07` completed: sites list, create, update, delete, manager isolation, soft delete, soft-delete name reuse, and tests verified; `M08` completed: equipment CRUD, site-bound ownership, global unique system_no, soft delete, manager isolation, and tests verified
 
-8. `F02` to `F10`
+8. `M09`
+   Current status: completed: equipment certificate base CRUD, equipment-bound ownership, soft delete, manager isolation, and tests verified; OCR, attachments, reminders, and automation remain future scope
+
+9. `F02` to `F10`
    Login, dashboard, customer pages, equipment pages, work order pages
 
 ## 4. What Is Intentionally Not First

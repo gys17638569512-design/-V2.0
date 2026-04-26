@@ -10,6 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import BaseModel
 
 if TYPE_CHECKING:
+    from app.models.certificate import EquipmentCertificate
     from app.models.site import Site
 
 
@@ -60,3 +61,4 @@ class Equipment(BaseModel):
     )
 
     site: Mapped["Site"] = relationship(back_populates="equipments")
+    certificates: Mapped[list["EquipmentCertificate"]] = relationship(back_populates="equipment")
