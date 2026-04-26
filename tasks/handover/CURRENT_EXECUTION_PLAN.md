@@ -54,7 +54,10 @@ This is the current recommended queue.
 8. `M09`
    Current status: completed: equipment certificate base CRUD, equipment-bound ownership, soft delete, manager isolation, and tests verified; OCR, attachments, reminders, and automation remain future scope
 
-9. `F02` to `F10`
+9. `M10`
+   Current status: completed: material master base CRUD, system_no generation, soft delete, shared visibility for `SUPER_ADMIN` / `ADMIN` / `MANAGER`, and tests verified; advanced stock flows, alerts, exports, and pricing layers remain future scope
+
+10. `F02` to `F10`
    Login, dashboard, customer pages, equipment pages, work order pages
 
 ## 4. What Is Intentionally Not First

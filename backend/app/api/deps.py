@@ -13,6 +13,7 @@ from app.services.contact_service import ContactService
 from app.services.customer_service import CustomerService
 from app.services.equipment_service import EquipmentService
 from app.services.field_option_service import FieldOptionService
+from app.services.material_service import MaterialService
 from app.services.site_service import SiteService
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -44,6 +45,10 @@ def get_site_service(session: Session = Depends(get_db_session)) -> SiteService:
 
 def get_equipment_service(session: Session = Depends(get_db_session)) -> EquipmentService:
     return EquipmentService(session)
+
+
+def get_material_service(session: Session = Depends(get_db_session)) -> MaterialService:
+    return MaterialService(session)
 
 
 def get_bearer_token(
